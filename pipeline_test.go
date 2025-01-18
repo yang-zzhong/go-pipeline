@@ -15,7 +15,7 @@ type stri struct {
 func TestPipeline(t *testing.T) {
 	total := 10
 	offset := 0
-	p := NewPipeline3[int, string, stri]()
+	p := NewPipeline2[int, string]()
 	p.Start(func() ([]int, bool) {
 		start := offset
 		end := offset + 1
@@ -37,15 +37,13 @@ func TestPipeline(t *testing.T) {
 			ret = append(ret, s)
 		}
 		return ret
-	}, 2).With2(func(r []string) []stri {
-		ret := []stri{}
+	}, 2).With2(func(r []string) []E {
 		for _, s := range r {
 			i, _ := strconv.Atoi(s)
 			item := stri{i: i, s: s}
 			fmt.Printf("complex: %v\n", item)
-			ret = append(ret, item)
 		}
-		return ret
+		return nil
 	}, 3)
 
 	p.Do(context.Background())

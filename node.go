@@ -14,14 +14,12 @@ type Node[T any] struct {
 
 func (p Node[T]) Do(ctx context.Context) {
 	var wg sync.WaitGroup
-	writeDone := make(chan struct{})
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
-				writeDone <- struct{}{}
 				close(p.q)
 				return
 			default:
@@ -30,7 +28,6 @@ func (p Node[T]) Do(ctx context.Context) {
 					p.q <- item
 				}
 				if done {
-					writeDone <- struct{}{}
 					close(p.q)
 					return
 				}
@@ -48,14 +45,14 @@ func (p Node[T]) Do(ctx context.Context) {
 				}
 				p.c(nil)
 				return
-			case <-writeDone:
-				if len(group) > 0 {
-					p.c(group)
+			case item, ok := <-p.q:
+				if !ok {
+					if len(group) > 0 {
+						p.c(group)
+					}
+					p.c(nil)
+					return
 				}
-				p.c(nil)
-				close(writeDone)
-				return
-			case item := <-p.q:
 				group = append(group, item)
 				if len(group) >= p.size {
 					p.c(group)

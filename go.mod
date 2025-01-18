@@ -1,6 +1,6 @@
 module github.com/yang-zzhong/go-pipeline
 
-go 1.23.5
+go 1.22.2
 
 require github.com/stretchr/testify v1.10.0
 
