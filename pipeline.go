@@ -12,7 +12,7 @@ type Doer interface {
 type E struct{}
 
 type Pipeline[T1, T2, T3, T4, T5, T6, T7, T8 any] struct {
-	head        func() ([]T1, bool)
+	generate    func() ([]T1, bool)
 	sizes       []int
 	transform_1 func([]T1) []T2
 	transform_2 func([]T2) []T3
@@ -23,80 +23,80 @@ type Pipeline[T1, T2, T3, T4, T5, T6, T7, T8 any] struct {
 	transform_7 func([]T7) []T8
 }
 
-func NewPipeline1[T1 any]() *Pipeline[T1, E, E, E, E, E, E, E] {
+func New1[T1 any]() *Pipeline[T1, E, E, E, E, E, E, E] {
 	return &Pipeline[T1, E, E, E, E, E, E, E]{sizes: make([]int, 1)}
 }
 
-func NewPipeline2[T1, T2 any]() *Pipeline[T1, T2, E, E, E, E, E, E] {
+func New2[T1, T2 any]() *Pipeline[T1, T2, E, E, E, E, E, E] {
 	return &Pipeline[T1, T2, E, E, E, E, E, E]{sizes: make([]int, 2)}
 }
 
-func NewPipeline3[T1, T2, T3 any]() *Pipeline[T1, T2, T3, E, E, E, E, E] {
+func New3[T1, T2, T3 any]() *Pipeline[T1, T2, T3, E, E, E, E, E] {
 	return &Pipeline[T1, T2, T3, E, E, E, E, E]{sizes: make([]int, 3)}
 }
 
-func NewPipeline4[T1, T2, T3, T4 any]() *Pipeline[T1, T2, T3, T4, E, E, E, E] {
+func New4[T1, T2, T3, T4 any]() *Pipeline[T1, T2, T3, T4, E, E, E, E] {
 	return &Pipeline[T1, T2, T3, T4, E, E, E, E]{sizes: make([]int, 4)}
 }
 
-func NewPipeline5[T1, T2, T3, T4, T5 any]() *Pipeline[T1, T2, T3, T4, T5, E, E, E] {
+func New5[T1, T2, T3, T4, T5 any]() *Pipeline[T1, T2, T3, T4, T5, E, E, E] {
 	return &Pipeline[T1, T2, T3, T4, T5, E, E, E]{sizes: make([]int, 5)}
 }
 
-func NewPipeline6[T1, T2, T3, T4, T5, T6 any]() *Pipeline[T1, T2, T3, T4, T5, T6, E, E] {
+func New6[T1, T2, T3, T4, T5, T6 any]() *Pipeline[T1, T2, T3, T4, T5, T6, E, E] {
 	return &Pipeline[T1, T2, T3, T4, T5, T6, E, E]{sizes: make([]int, 6)}
 }
 
-func NewPipeline7[T1, T2, T3, T4, T5, T6, T7 any]() *Pipeline[T1, T2, T3, T4, T5, T6, T7, E] {
+func New7[T1, T2, T3, T4, T5, T6, T7 any]() *Pipeline[T1, T2, T3, T4, T5, T6, T7, E] {
 	return &Pipeline[T1, T2, T3, T4, T5, T6, T7, E]{sizes: make([]int, 7)}
 }
 
-func NewPipeline8[T1, T2, T3, T4, T5, T6, T7, T8 any]() *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func New8[T1, T2, T3, T4, T5, T6, T7, T8 any]() *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	return &Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]{sizes: make([]int, 8)}
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Start(head func() ([]T1, bool)) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
-	p.head = head
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Start(generate func() ([]T1, bool)) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+	p.generate = generate
 	return p
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) With1(transformer func([]T1) []T2, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Next1(transformer func([]T1) []T2, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.sizes[0] = size
 	p.transform_1 = transformer
 	return p
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) With2(transformer func([]T2) []T3, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Next2(transformer func([]T2) []T3, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.sizes[1] = size
 	p.transform_2 = transformer
 	return p
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) With3(transformer func([]T3) []T4, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Next3(transformer func([]T3) []T4, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.sizes[2] = size
 	p.transform_3 = transformer
 	return p
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) With4(transformer func([]T4) []T5, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Next4(transformer func([]T4) []T5, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.sizes[3] = size
 	p.transform_4 = transformer
 	return p
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) With5(transformer func([]T5) []T6, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Next5(transformer func([]T5) []T6, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.sizes[4] = size
 	p.transform_5 = transformer
 	return p
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) With6(transformer func([]T6) []T7, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Next6(transformer func([]T6) []T7, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.sizes[5] = size
 	p.transform_6 = transformer
 	return p
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) With7(transformer func([]T7) []T8, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Next7(transformer func([]T7) []T8, size int) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.sizes[6] = size
 	p.transform_7 = transformer
 	return p
@@ -116,7 +116,7 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) {
 	for i := 0; i < len(p.sizes); i++ {
 		if i == 0 {
 			ch2 = make(chan T2, p.sizes[i])
-			doers = append(doers, NewNode(p.head, func(ts []T1) {
+			doers = append(doers, NewNode(p.generate, func(ts []T1) {
 				if len(ts) == 0 || p.transform_1 == nil {
 					if i < len(p.sizes)-1 {
 						close(ch2)
