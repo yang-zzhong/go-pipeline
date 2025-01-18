@@ -29,27 +29,27 @@ func TestPipeline(t *testing.T) {
 		}
 		ret := []int{}
 		for i := start; i < end; i++ {
-			time.Sleep(time.Millisecond * time.Duration(rand.Int63n(10)) * 10)
 			fmt.Printf("number: %d\n", i)
 			ret = append(ret, i)
 		}
 		offset += len(ret)
 		return ret, end == total
-	}).Next1(func(r []int) []string {
+	}).Next1(func(r []int) ([]string, error) {
 		ret := []string{}
 		for _, i := range r {
+			time.Sleep(time.Millisecond * time.Duration(rand.Int63n(10)) * 10)
 			s := fmt.Sprintf("%d", i)
 			fmt.Printf("string: %s\n", s)
 			ret = append(ret, s)
 		}
-		return ret
-	}, 10).Next2(func(r []string) []pipeline.E {
+		return ret, nil
+	}, 10).Next2(func(r []string) ([]pipeline.E, error) {
 		for _, s := range r {
 			i, _ := strconv.Atoi(s)
 			item := stri{i: i, s: s}
 			fmt.Printf("complex: %v\n", item)
 		}
-		return nil
+		return nil, nil
 	}, 20)
 
 	p.Do(context.Background())
