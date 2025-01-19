@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"sync"
 )
 
@@ -19,8 +20,21 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				err, ok := r.(error)
-				if ok && err.Error() == "send on closed channel" {
+				if e, ok := r.(error); ok {
+					if e.Error() == "send on closed channel" {
+						return
+					}
+					errlock.Lock()
+					err = e
+					errlock.Unlock()
+					close(p.q)
+					return
+				}
+				if s, ok := r.(string); ok {
+					errlock.Lock()
+					err = errors.New(s)
+					errlock.Unlock()
+					close(p.q)
 					return
 				}
 				panic(r)
@@ -58,6 +72,25 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 		}
 	}()
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				if e, ok := r.(error); ok {
+					errlock.Lock()
+					err = e
+					errlock.Unlock()
+					close(p.q)
+					return
+				}
+				if s, ok := r.(string); ok {
+					errlock.Lock()
+					err = errors.New(s)
+					errlock.Unlock()
+					close(p.q)
+					return
+				}
+				panic(r)
+			}
+		}()
 		defer wg.Done()
 		group := []T{}
 		for {

@@ -96,5 +96,5 @@ func TestPipelineNode_panic(t *testing.T) {
 	n := NewNode(producer, consumer, 1)
 	err := n.Do(context.Background())
 	assert.NotNil(t, err)
-	assert.Equal(t, err.Error(), "gt 8")
+	assert.Equal(t, err.Error(), "hello")
 }
