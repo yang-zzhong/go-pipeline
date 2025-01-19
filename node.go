@@ -7,14 +7,14 @@ import (
 
 type Node[T any] struct {
 	q    chan T
-	g    func() ([]T, bool)
+	g    func() ([]T, bool, error)
 	c    func(data []T) error
 	size int
 }
 
 func (p Node[T]) Do(ctx context.Context) (err error) {
 	var wg sync.WaitGroup
-	stop := make(chan struct{}, 1)
+	var errlock sync.Mutex
 	wg.Add(2)
 	go func() {
 		defer func() {
@@ -33,7 +33,20 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 				close(p.q)
 				return
 			default:
-				items, done := p.g()
+				var (
+					items []T
+					done  bool
+					e     error
+				)
+				if items, done, e = p.g(); e != nil {
+					errlock.Lock()
+					if err == nil {
+						err = e
+					}
+					errlock.Unlock()
+					close(p.q)
+					return
+				}
 				for _, item := range items {
 					p.q <- item
 				}
@@ -51,8 +64,12 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 			select {
 			case <-ctx.Done():
 				if len(group) > 0 {
-					if err = p.c(group); err != nil {
-						stop <- struct{}{}
+					if e := p.c(group); e != nil {
+						errlock.Lock()
+						if err == nil {
+							err = e
+						}
+						errlock.Unlock()
 						return
 					}
 				}
@@ -61,9 +78,13 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 			case item, ok := <-p.q:
 				if !ok {
 					if len(group) > 0 {
-						if err = p.c(group); err != nil {
-							<-p.q
-							stop <- struct{}{}
+						if e := p.c(group); e != nil {
+							errlock.Lock()
+							if err == nil {
+								err = e
+							}
+							errlock.Unlock()
+							close(p.q)
 							return
 						}
 					}
@@ -72,7 +93,12 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 				}
 				group = append(group, item)
 				if len(group) >= p.size {
-					if err = p.c(group); err != nil {
+					if e := p.c(group); e != nil {
+						errlock.Lock()
+						if err == nil {
+							err = e
+						}
+						errlock.Unlock()
 						close(p.q)
 						return
 					}
@@ -82,11 +108,10 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 		}
 	}()
 	wg.Wait()
-	close(stop)
 	return
 }
 
-func NewNode[T any](producer func() ([]T, bool), consumer func(data []T) error, size int) *Node[T] {
+func NewNode[T any](producer func() ([]T, bool, error), consumer func(data []T) error, size int) *Node[T] {
 	return &Node[T]{
 		q:    make(chan T),
 		c:    consumer,

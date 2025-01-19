@@ -21,7 +21,7 @@ func TestPipeline(t *testing.T) {
 	total := 100
 	offset := 0
 	p := pipeline.New2[int, string]()
-	p.Start(func() ([]int, bool) {
+	p.Start(func() ([]int, bool, error) {
 		start := offset
 		end := offset + 1
 		if end > total {
@@ -33,7 +33,7 @@ func TestPipeline(t *testing.T) {
 			ret = append(ret, i)
 		}
 		offset += len(ret)
-		return ret, end == total
+		return ret, end == total, nil
 	}).Next1(func(r []int) ([]string, error) {
 		ret := []string{}
 		for _, i := range r {

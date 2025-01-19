@@ -13,7 +13,7 @@ type Doer interface {
 type E struct{}
 
 type Pipeline[T1, T2, T3, T4, T5, T6, T7, T8 any] struct {
-	generate    func() ([]T1, bool)
+	generate    func() ([]T1, bool, error)
 	sizes       []int
 	transform_1 func([]T1) ([]T2, error)
 	transform_2 func([]T2) ([]T3, error)
@@ -56,7 +56,7 @@ func New8[T1, T2, T3, T4, T5, T6, T7, T8 any]() *Pipeline[T1, T2, T3, T4, T5, T6
 	return &Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]{sizes: make([]int, 8)}
 }
 
-func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Start(generate func() ([]T1, bool)) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
+func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Start(generate func() ([]T1, bool, error)) *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8] {
 	p.generate = generate
 	return p
 }
@@ -141,12 +141,12 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 			}, p.sizes[i]))
 		} else if i == 1 {
 			ch3 = make(chan T3, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T2, bool) {
+			doers = append(doers, NewNode(func() ([]T2, bool, error) {
 				t2, ok := <-ch2
 				if !ok {
-					return nil, true
+					return nil, true, nil
 				}
-				return []T2{t2}, false
+				return []T2{t2}, false, nil
 			}, func(t2s []T2) error {
 				if p.transform_2 == nil {
 					if i < len(p.sizes)-1 {
@@ -168,12 +168,12 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 			}, p.sizes[i]))
 		} else if i == 2 {
 			ch4 = make(chan T4, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T3, bool) {
+			doers = append(doers, NewNode(func() ([]T3, bool, error) {
 				t2, ok := <-ch3
 				if !ok {
-					return nil, true
+					return nil, true, nil
 				}
-				return []T3{t2}, false
+				return []T3{t2}, false, nil
 			}, func(t2s []T3) error {
 				if p.transform_3 == nil {
 					if i < len(p.sizes)-1 {
@@ -195,12 +195,12 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 			}, p.sizes[i]))
 		} else if i == 3 {
 			ch5 = make(chan T5, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T4, bool) {
+			doers = append(doers, NewNode(func() ([]T4, bool, error) {
 				t2, ok := <-ch4
 				if !ok {
-					return nil, true
+					return nil, true, nil
 				}
-				return []T4{t2}, false
+				return []T4{t2}, false, nil
 			}, func(t2s []T4) error {
 				if p.transform_4 == nil {
 					if i < len(p.sizes)-1 {
@@ -222,12 +222,12 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 			}, p.sizes[i]))
 		} else if i == 4 {
 			ch6 = make(chan T6, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T5, bool) {
+			doers = append(doers, NewNode(func() ([]T5, bool, error) {
 				t2, ok := <-ch5
 				if !ok {
-					return nil, true
+					return nil, true, nil
 				}
-				return []T5{t2}, false
+				return []T5{t2}, false, nil
 			}, func(t2s []T5) error {
 				if p.transform_5 == nil {
 					if i < len(p.sizes)-1 {
@@ -249,12 +249,12 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 			}, p.sizes[i]))
 		} else if i == 5 {
 			ch7 = make(chan T7, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T6, bool) {
+			doers = append(doers, NewNode(func() ([]T6, bool, error) {
 				t2, ok := <-ch6
 				if !ok {
-					return nil, true
+					return nil, true, nil
 				}
-				return []T6{t2}, false
+				return []T6{t2}, false, nil
 			}, func(t2s []T6) error {
 				if p.transform_6 == nil {
 					if i < len(p.sizes)-1 {
@@ -276,12 +276,12 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 			}, p.sizes[i]))
 		} else if i == 6 {
 			ch8 = make(chan T8, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T7, bool) {
+			doers = append(doers, NewNode(func() ([]T7, bool, error) {
 				t2, ok := <-ch7
 				if !ok {
-					return nil, true
+					return nil, true, nil
 				}
-				return []T7{t2}, false
+				return []T7{t2}, false, nil
 			}, func(t2s []T7) error {
 				if p.transform_7 == nil {
 					if i < len(p.sizes)-1 {

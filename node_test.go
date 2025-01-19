@@ -12,7 +12,7 @@ func TestPipelineNode(t *testing.T) {
 	total := 11
 	offset := 0
 	should := 0
-	producer := func() ([]int, bool) {
+	producer := func() ([]int, bool, error) {
 		start := offset
 		end := offset + 2
 		if end > total {
@@ -24,7 +24,7 @@ func TestPipelineNode(t *testing.T) {
 			ret = append(ret, i)
 		}
 		offset += 2
-		return ret, end == total
+		return ret, end == total, nil
 	}
 	r := 0
 	consumer := func(p []int) error {
@@ -42,7 +42,7 @@ func TestPipelineNode_error(t *testing.T) {
 	total := 11
 	offset := 0
 	should := 0
-	producer := func() ([]int, bool) {
+	producer := func() ([]int, bool, error) {
 		start := offset
 		end := offset + 2
 		if end > total {
@@ -54,7 +54,7 @@ func TestPipelineNode_error(t *testing.T) {
 			ret = append(ret, i)
 		}
 		offset += 2
-		return ret, end == total
+		return ret, end == total, nil
 	}
 	r := 0
 	consumer := func(p []int) error {
@@ -76,7 +76,7 @@ func TestPipelineNode_panic(t *testing.T) {
 	total := 11
 	offset := 0
 	should := 0
-	producer := func() ([]int, bool) {
+	producer := func() ([]int, bool, error) {
 		start := offset
 		end := offset + 2
 		if end > total {
@@ -88,7 +88,7 @@ func TestPipelineNode_panic(t *testing.T) {
 			ret = append(ret, i)
 		}
 		offset += 2
-		return ret, end == total
+		return ret, end == total, nil
 	}
 	consumer := func(p []int) error {
 		panic("hello")
