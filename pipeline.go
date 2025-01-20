@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"context"
-	"errors"
 	"sync"
 )
 
@@ -117,190 +116,25 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 	for i := 0; i < len(p.sizes); i++ {
 		if i == 0 {
 			ch2 = make(chan T2, p.sizes[i])
-			doers = append(doers, NewNode(p.generate, func(ts []T1) error {
-				if len(ts) == 0 || p.transform_1 == nil {
-					if i < len(p.sizes)-1 {
-						close(ch2)
-					}
-					if p.transform_1 == nil {
-						return errors.New("undefined transform_1")
-					}
-					return nil
-				}
-				ret, err := p.transform_1(ts)
-				if err != nil {
-					if i < len(p.sizes)-1 {
-						close(ch2)
-					}
-					return err
-				}
-				for _, ti := range ret {
-					ch2 <- ti
-				}
-				return nil
-			}, p.sizes[i]))
+			doers = append(doers, NewNode(p.generate, transform(ch2, p.transform_1), p.sizes[i]))
 		} else if i == 1 {
 			ch3 = make(chan T3, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T2, bool, error) {
-				t2, ok := <-ch2
-				if !ok {
-					return nil, true, nil
-				}
-				return []T2{t2}, false, nil
-			}, func(t2s []T2) error {
-				if p.transform_2 == nil {
-					if i < len(p.sizes)-1 {
-						close(ch3)
-					}
-					return errors.New("undefined transform_2")
-				}
-				t3s, err := p.transform_2(t2s)
-				if err != nil {
-					if i < len(p.sizes)-1 {
-						close(ch2)
-					}
-					return err
-				}
-				for _, ti := range t3s {
-					ch3 <- ti
-				}
-				return nil
-			}, p.sizes[i]))
+			doers = append(doers, NewNode(transfer(ch2), transform(ch3, p.transform_2), p.sizes[i]))
 		} else if i == 2 {
 			ch4 = make(chan T4, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T3, bool, error) {
-				t2, ok := <-ch3
-				if !ok {
-					return nil, true, nil
-				}
-				return []T3{t2}, false, nil
-			}, func(t2s []T3) error {
-				if p.transform_3 == nil {
-					if i < len(p.sizes)-1 {
-						close(ch4)
-					}
-					return errors.New("undefined transform_3")
-				}
-				t4s, err := p.transform_3(t2s)
-				if err != nil {
-					if i < len(p.sizes)-1 {
-						close(ch2)
-					}
-					return err
-				}
-				for _, ti := range t4s {
-					ch4 <- ti
-				}
-				return nil
-			}, p.sizes[i]))
+			doers = append(doers, NewNode(transfer(ch3), transform(ch4, p.transform_3), p.sizes[i]))
 		} else if i == 3 {
 			ch5 = make(chan T5, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T4, bool, error) {
-				t2, ok := <-ch4
-				if !ok {
-					return nil, true, nil
-				}
-				return []T4{t2}, false, nil
-			}, func(t2s []T4) error {
-				if p.transform_4 == nil {
-					if i < len(p.sizes)-1 {
-						close(ch5)
-					}
-					return errors.New("undefined transform_4")
-				}
-				t4s, err := p.transform_4(t2s)
-				if err != nil {
-					if i < len(p.sizes)-1 {
-						close(ch5)
-					}
-					return err
-				}
-				for _, ti := range t4s {
-					ch5 <- ti
-				}
-				return nil
-			}, p.sizes[i]))
+			doers = append(doers, NewNode(transfer(ch4), transform(ch5, p.transform_4), p.sizes[i]))
 		} else if i == 4 {
 			ch6 = make(chan T6, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T5, bool, error) {
-				t2, ok := <-ch5
-				if !ok {
-					return nil, true, nil
-				}
-				return []T5{t2}, false, nil
-			}, func(t2s []T5) error {
-				if p.transform_5 == nil {
-					if i < len(p.sizes)-1 {
-						close(ch6)
-					}
-					return errors.New("undefined transform_5")
-				}
-				t4s, err := p.transform_5(t2s)
-				if err != nil {
-					if i < len(p.sizes)-1 {
-						close(ch5)
-					}
-					return err
-				}
-				for _, ti := range t4s {
-					ch6 <- ti
-				}
-				return nil
-			}, p.sizes[i]))
+			doers = append(doers, NewNode(transfer(ch5), transform(ch6, p.transform_5), p.sizes[i]))
 		} else if i == 5 {
 			ch7 = make(chan T7, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T6, bool, error) {
-				t2, ok := <-ch6
-				if !ok {
-					return nil, true, nil
-				}
-				return []T6{t2}, false, nil
-			}, func(t2s []T6) error {
-				if p.transform_6 == nil {
-					if i < len(p.sizes)-1 {
-						close(ch7)
-					}
-					return errors.New("undefined transform_6")
-				}
-				t4s, err := p.transform_6(t2s)
-				if err != nil {
-					if i < len(p.sizes)-1 {
-						close(ch5)
-					}
-					return err
-				}
-				for _, ti := range t4s {
-					ch7 <- ti
-				}
-				return nil
-			}, p.sizes[i]))
+			doers = append(doers, NewNode(transfer(ch6), transform(ch7, p.transform_6), p.sizes[i]))
 		} else if i == 6 {
 			ch8 = make(chan T8, p.sizes[i])
-			doers = append(doers, NewNode(func() ([]T7, bool, error) {
-				t2, ok := <-ch7
-				if !ok {
-					return nil, true, nil
-				}
-				return []T7{t2}, false, nil
-			}, func(t2s []T7) error {
-				if p.transform_7 == nil {
-					if i < len(p.sizes)-1 {
-						close(ch8)
-					}
-					return errors.New("undefined transform_7")
-				}
-				t4s, err := p.transform_7(t2s)
-				if err != nil {
-					if i < len(p.sizes)-1 {
-						close(ch5)
-					}
-					return err
-				}
-				for _, ti := range t4s {
-					ch8 <- ti
-				}
-				return nil
-			}, p.sizes[i]))
+			doers = append(doers, NewNode(transfer(ch7), transform(ch8, p.transform_7), p.sizes[i]))
 		}
 	}
 	var wg sync.WaitGroup

@@ -4,17 +4,18 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPipelineNode(t *testing.T) {
-	total := 11
+	total := 100
 	offset := 0
 	should := 0
 	producer := func() ([]int, bool, error) {
 		start := offset
-		end := offset + 2
+		end := offset + 10
 		if end > total {
 			end = total
 		}
@@ -23,17 +24,18 @@ func TestPipelineNode(t *testing.T) {
 			should += i
 			ret = append(ret, i)
 		}
-		offset += 2
+		offset = end
 		return ret, end == total, nil
 	}
 	r := 0
 	consumer := func(p []int) error {
 		for _, i := range p {
+			time.Sleep(100 * time.Millisecond)
 			r += i
 		}
 		return nil
 	}
-	n := NewNode(producer, consumer, 1)
+	n := NewNode(producer, consumer, 17)
 	n.Do(context.Background())
 	assert.Equal(t, r, should, "result not equal")
 }

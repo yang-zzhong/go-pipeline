@@ -16,6 +16,13 @@ type Node[T any] struct {
 func (p Node[T]) Do(ctx context.Context) (err error) {
 	var wg sync.WaitGroup
 	var errlock sync.Mutex
+	setErr := func(e error) {
+		errlock.Lock()
+		if err == nil {
+			err = e
+		}
+		errlock.Unlock()
+	}
 	wg.Add(2)
 	go func() {
 		defer func() {
@@ -24,16 +31,12 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 					if e.Error() == "send on closed channel" {
 						return
 					}
-					errlock.Lock()
-					err = e
-					errlock.Unlock()
+					setErr(e)
 					close(p.q)
 					return
 				}
 				if s, ok := r.(string); ok {
-					errlock.Lock()
-					err = errors.New(s)
-					errlock.Unlock()
+					setErr(errors.New(s))
 					close(p.q)
 					return
 				}
@@ -71,20 +74,20 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 			}
 		}
 	}()
+
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
 				if e, ok := r.(error); ok {
-					errlock.Lock()
-					err = e
-					errlock.Unlock()
+					if e.Error() == "send on closed channel" {
+						return
+					}
+					setErr(e)
 					close(p.q)
 					return
 				}
 				if s, ok := r.(string); ok {
-					errlock.Lock()
-					err = errors.New(s)
-					errlock.Unlock()
+					setErr(errors.New(s))
 					close(p.q)
 					return
 				}
@@ -93,16 +96,22 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 		}()
 		defer wg.Done()
 		group := []T{}
+		handleGroup := func(closeOnErr bool) error {
+			if e := p.c(group); e != nil {
+				setErr(e)
+				if closeOnErr {
+					close(p.q)
+				}
+				return e
+			}
+			group = []T{}
+			return nil
+		}
 		for {
 			select {
 			case <-ctx.Done():
 				if len(group) > 0 {
-					if e := p.c(group); e != nil {
-						errlock.Lock()
-						if err == nil {
-							err = e
-						}
-						errlock.Unlock()
+					if err := handleGroup(false); err != nil {
 						return
 					}
 				}
@@ -111,13 +120,7 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 			case item, ok := <-p.q:
 				if !ok {
 					if len(group) > 0 {
-						if e := p.c(group); e != nil {
-							errlock.Lock()
-							if err == nil {
-								err = e
-							}
-							errlock.Unlock()
-							close(p.q)
+						if err := handleGroup(true); err != nil {
 							return
 						}
 					}
@@ -126,16 +129,9 @@ func (p Node[T]) Do(ctx context.Context) (err error) {
 				}
 				group = append(group, item)
 				if len(group) >= p.size {
-					if e := p.c(group); e != nil {
-						errlock.Lock()
-						if err == nil {
-							err = e
-						}
-						errlock.Unlock()
-						close(p.q)
+					if err := handleGroup(true); err != nil {
 						return
 					}
-					group = []T{}
 				}
 			}
 		}
