@@ -152,5 +152,8 @@ func (p *Pipeline[T1, T2, T3, T4, T5, T6, T7, T8]) Do(ctx context.Context) error
 		}()
 	}
 	wg.Wait()
+	if len(errs) == 0 {
+		return nil
+	}
 	return errs
 }
