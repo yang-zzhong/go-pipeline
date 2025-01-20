@@ -20,6 +20,7 @@ func transform[T1, T2 any](ch chan T2, transformFunc func([]T1) ([]T2, error)) f
 		}
 		if len(t2s) == 0 {
 			close(ch)
+			return nil
 		}
 		ret, err := transformFunc(t2s)
 		if err != nil {
